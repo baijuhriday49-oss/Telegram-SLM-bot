@@ -49,7 +49,7 @@ async def handle_message(update: Update, context):
         logging.error(f"CF error: {e}")
         reply = f"⚠️ Error: {e}"
     history.append({"role": "assistant", "content": reply})
-    await update.message.reply_text(reply)
+    await update.message.reply_text(reply, parse_mode="Markdown")
 
 def main():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
