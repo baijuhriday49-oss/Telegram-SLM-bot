@@ -11,7 +11,7 @@ CF_ACCOUNT_ID  = os.environ["CF_ACCOUNT_ID"]
 MAX_HISTORY    = 10
 SYSTEM_PROMPT  = "You are a helpful, concise AI assistant."
 
-# Available models
+# Available models (verified from Cloudflare docs)
 TEXT_MODELS = {
     "llama-1b":   "@cf/meta/llama-3.2-1b-instruct",
     "llama-3b":   "@cf/meta/llama-3.2-3b-instruct",
@@ -23,9 +23,9 @@ TEXT_MODELS = {
 }
 
 IMAGE_MODELS = {
-    "flux":        "@cf/black-forest-labs/flux-1-schnell",
-    "sdxl":        "@cf/stability-ai/stable-diffusion-xl-base-1.0",
-    "dreamshaper": "@cf/lykon/dreamshaper-8-lcm",
+    "flux":           "@cf/black-forest-labs/flux-1-schnell",
+    "sdxl":           "@cf/stabilityai/stable-diffusion-xl-base-1.0",
+    "dreamshaper":    "@cf/lykon/dreamshaper-8-lcm",
     "sdxl-lightning": "@cf/bytedance/stable-diffusion-xl-lightning",
 }
 
@@ -139,14 +139,14 @@ async def model_cmd(update: Update, context):
             current_text_model = TEXT_MODELS[args[1]]
             await update.message.reply_text(f"✅ Text model switched to `{args[1]}`", parse_mode="Markdown")
         else:
-            await update.message.reply_text(f"❌ Unknown model. Use `/model list` to see options.", parse_mode="Markdown")
+            await update.message.reply_text("❌ Unknown model. Use `/model list` to see options.", parse_mode="Markdown")
 
     elif args[0] == "image":
         if args[1] in IMAGE_MODELS:
             current_image_model = IMAGE_MODELS[args[1]]
             await update.message.reply_text(f"✅ Image model switched to `{args[1]}`", parse_mode="Markdown")
         else:
-            await update.message.reply_text(f"❌ Unknown model. Use `/model list` to see options.", parse_mode="Markdown")
+            await update.message.reply_text("❌ Unknown model. Use `/model list` to see options.", parse_mode="Markdown")
 
 async def image(update: Update, context):
     prompt = " ".join(context.args)
