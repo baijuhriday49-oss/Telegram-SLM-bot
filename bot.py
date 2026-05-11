@@ -10,6 +10,7 @@ CF_API_TOKEN   = os.environ["CF_API_TOKEN"]
 CF_ACCOUNT_ID  = os.environ["CF_ACCOUNT_ID"]
 MODEL          = "@cf/meta/llama-3.2-1b-instruct"
 IMAGE_MODEL    = "@cf/black-forest-labs/flux-1-schnell"
+VIDEO_MODEL    = "@cf/google/veo-3"
 MAX_HISTORY    = 10
 SYSTEM_PROMPT  = "You are a helpful, concise AI assistant."
 
@@ -40,6 +41,15 @@ async def generate_image(prompt):
         result = r.json()["result"]["image"]
         return base64.b64decode(result)
 
+async def generate_video(prompt):
+    url = f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/ai/run/{VIDEO_MODEL}"
+    async with httpx.AsyncClient(timeout=300) as client:
+        r = await client.post(url,
+            headers={"Authorization": f"Bearer {CF_API_TOKEN}", "Content-Type": "application/json"},
+            json={"prompt": prompt, "duration": "6s", "aspect_ratio": "16:9", "resolution": "720p"})
+        r.raise_for_status()
+        return r.content
+
 async def start(update: Update, context):
     histories[update.effective_chat.id] = []
     await update.message.reply_text(
@@ -47,7 +57,8 @@ async def start(update: Update, context):
         "Commands:\n"
         "/start — reset\n"
         "/clear — clear history\n"
-        "/image <prompt> — generate an image 🎨"
+        "/image <prompt> — generate an image 🎨\n"
+        "/video <prompt> — generate a video 🎥"
     )
 
 async def clear(update: Update, context):
@@ -66,6 +77,20 @@ async def image(update: Update, context):
     except Exception as e:
         logging.error(f"Image error: {e}")
         await update.message.reply_text(f"⚠️ Image generation failed: {e}")
+
+async def video(update: Update, context):
+    prompt = " ".join(context.args)
+    if not prompt:
+        await update.message.reply_text("Please provide a prompt!\nExample: /video a dog running on a beach")
+        return
+    await update.message.reply_text("⏳ Generating video, this may take a minute...")
+    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="upload_video")
+    try:
+        video_bytes = await generate_video(prompt)
+        await update.message.reply_video(video=video_bytes, caption=f"🎥 {prompt}")
+    except Exception as e:
+        logging.error(f"Video error: {e}")
+        await update.message.reply_text(f"⚠️ Video generation failed: {e}")
 
 async def handle_message(update: Update, context):
     chat_id = update.effective_chat.id
@@ -87,6 +112,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("clear", clear))
     app.add_handler(CommandHandler("image", image))
+    app.add_handler(CommandHandler("video", video))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     logging.info("Bot running...")
     app.run_polling()
